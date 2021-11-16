@@ -1,0 +1,83 @@
+1 - Instalar CraftBeerPi3 (para copiar arquivos pode usar o WinSCP)
+2 - Modificar arquivos para interface serial (arquivos plugins)
+	~/craftbeerpi3/modules/base_plugins/ (pasta plugins não está reconhecendo, por isso usada a base_plugins)
+3 - Criar arquivos autoexec (para redirecionar entrada serial)
+	~/autoexecs
+4 - Criar pastas ~/entrada/1 (1 até 10)
+5  - Instalar Interceptty (redireciona serial)
+	- ./configure
+	- make
+	- make install
+	- testar
+6 - Configurar autoexecs para iniciar no boot
+	- sudo raspi-config, selecionar login automático na linha de comando
+	- crontab -e (sem o sudo pra executar como pi mesmo...)
+	- adicionar as seguintes linhas:
+		@reboot sudo /home/pi/autoexecs/serialmirror.py
+		@reboot sudo /home/pi/autoexecs/redir.py
+	- savar e rodar update-rc.d cron defaults
+6.a - Ou adicionar execução no run.py (ideal)
+--------------------------------------------
+Criação do Banco de Dados:
+	/modules/__init__.py   -qualque coisa descomentar try,except para ver o erro
+	/config/schema.sql
+
+	sudo apt-get install sqlitebrowser
+
+--------------------------------------------
+Panela
+							/modules/kettle/__init__.py
+	Carregar módulo kettle				/modules/__init__.py
+	Kettle controler : 				/modules/core/controller.py
+	??						/modules/core/core.py
+	Propriedades (para aparecer em seleção?)	/modules/core/props.py
+	KettleAPI					/modules/core/step.py
+	UI Geral					/modules/ui/static/bundle.js
+---------------------------------------------
+Comandos
+
+iniciar em backgrond 	sudo /etc/init.d/craftbeerpiboot stop
+iniciar no terminal	cd ~/craftbeerpi3 
+			sudo ./run.py
+teste interceptty	interceptty /dev/ttyUSB0 /dev/ttyDUMMY
+teste redir		cat ~/entrada/1/entrada
+teste ttyUSB0		sudo echo aaa >ttyUSB0	???
+teste onewire		cat /sys/bus/w1/devices/w1_bus_master1/w1_master_slave_count
+			cd /sys/bus/w1/devices/
+			dir
+			cat /sys/bus/w1/devices/10-0008014d52a6/w1_slave
+
+------------------------
+NO RASPBERRY A LEITURA DA SERIAL FICA COM INTERFERENCIA, USAR O interceptty PARA A LEITURA ADEQUADA
+fixar usb - ver dados
+ udevadm info --name=/dev/ttyUSB2
+
+udevadm info --name=/dev/ttyUSB1 --attribute-walk
+
+ sudo nano /etc/udev/rules.d/10-usb-serial.rules
+ no arquivo:
+
+   SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{devpath}=="1.2.3",  SYMLINK+="ttyUSB_P1"
+
+
+
+-------------------------
+ATENÇÃO
+  COPIAR ARQUIVOS DO RASPBERRY P O PC (BACKUP)
+
+-------------------------
+[Pendente]
+
+1 - implementar estado (memoria) nos atuadores - OK
+	guardar na memoria os atuadores para o multi-atuador, implementando uma opção (3) para restaurar situação anterior
+		ADICIONADO RETURN NAS FUNÇÕES:	
+			CORE - STEP.PY - ActorAPI - actor_off
+			CORE - CORE.PY - ActorAPI - switch_actor_on
+
+2 IMPLEMENTAR AUTO ON E AUTO OFF DA EXIBIÇÃO DOS COMANDOS COMBINADOS QUANDO SAÍDAS NÃO ATENDEREM AOS CRITÉRIOS - ok
+	no arquivo plugins- ext_actor - rotina e atuador de atualização
+	implementado - mudar somente exibição (exib_on e exib_off)
+	implementado - obter estado sem alterar atuador (read_status)
+
+3 - ao atuar no aquecimento do cooler, não atuar no cooktop, mas no Set poit de temperatura da panela!!! (ou desligar automático...)
+
